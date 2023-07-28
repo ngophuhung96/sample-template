@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="vn.honagi.administrative.db.postgres.ApiTrafficRepository">
+
+    <select id="findByApiName"
+            parameterType="String"
+            resultType="vn.honagi.administrative.model.postgres.ApiTraffic">
+        LOCK TABLE api_traffic IN ACCESS EXCLUSIVE MODE;
+
+        SELECT
+            *
+        FROM
+            api_traffic
+        WHERE
+            api_name = #{apiName}
+        FOR UPDATE
+    </select>
+
+    <insert id="save" parameterType="vn.honagi.administrative.model.postgres.ApiTraffic">
+        INSERT INTO
+            api_traffic (api_name, total_use)
+        VALUES
+            (#{apiName}, #{totalUse})
+    </insert>
+
+    <update id="update" parameterType="vn.honagi.administrative.model.postgres.ApiTraffic">
+        UPDATE
+            api_traffic
+        SET
+            total_use = #{totalUse}
+        WHERE
+            api_name = #{apiName}
+    </update>
+
+    <select id="findAll" resultType="vn.honagi.administrative.model.postgres.ApiTraffic">
+        SELECT
+            *
+        FROM
+            api_traffic
+    </select>
+
+</mapper>

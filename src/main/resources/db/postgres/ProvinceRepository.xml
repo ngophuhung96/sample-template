@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="vn.honagi.administrative.db.postgres.ProvinceRepository">
+
+    <select id="listAllProvince" resultType="vn.honagi.administrative.model.postgres.MstProvince">
+        SELECT
+            *
+        FROM
+            mst_provinces
+    </select>
+
+    <select id="findProvinceByProvinceCode" parameterType="String" resultType="Map">
+        WITH villages AS (
+            SELECT
+                v.village_name
+                 , v.ward_id
+            FROM
+                mst_villages v
+        ),
+        ward AS (
+            SELECT
+                w.ward_code
+                , w.ward_name
+                , w.ward_level
+                , w.district_id
+                , json_agg (v) AS villages_temp
+            FROM
+                mst_wards w
+            INNER JOIN
+                villages v
+            USING (ward_id)
+            GROUP BY
+                w.ward_code
+                , w.ward_name
+                , w.ward_level
+                , w.district_id
+        ),
+        district AS (
+            SELECT
+                d.district_code
+                , d.district_name
+                , d.district_level
+                , d.province_id
+                , json_agg (w) AS wards
+            FROM
+                mst_districts d
+            INNER JOIN
+                ward w
+            USING (district_id)
+            GROUP BY
+                d.district_code
+                , d.district_name
+                , d.district_level
+                , d.province_id
+        ),
+        province AS (
+            SELECT
+                p.province_code
+                , p.province_name
+                , p.province_phone_code
+                , p. province_license_plate
+                , p. province_level
+                , json_agg (d) AS districts
+            FROM
+                mst_provinces p
+            INNER JOIN
+                district d
+            USING (province_id)
+            WHERE
+                p.province_code = #{provinceCode}
+            GROUP BY
+                p.province_code
+                , p.province_name
+                , p.province_phone_code
+                , p. province_license_plate
+                , p. province_level
+        )
+
+        SELECT
+            json_agg (province)
+        FROM
+            province;
+    </select>
+
+    <select id="findProvinceByPhoneCode"
+            parameterType="String"
+            resultType="vn.honagi.administrative.model.postgres.MstProvince">
+        SELECT
+            *
+        FROM
+            mst_provinces
+        WHERE
+            province_phone_code = #{phoneCode}
+    </select>
+
+    <select id="findProvinceByLicensePlateCode" resultType="vn.honagi.administrative.model.postgres.MstProvince">
+        SELECT
+            *
+        FROM
+            mst_provinces
+        WHERE
+            province_license_plate LIKE('%${licensePlateCode}%')
+    </select>
+
+</mapper>
